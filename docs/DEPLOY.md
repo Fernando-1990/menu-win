@@ -5,7 +5,8 @@ Nenhuma senha ou chave vai para o git: tudo fica nas variáveis de ambiente de c
 
 ## 1. Banco (Supabase)
 1. supabase.com → **New project**.
-   - Region: **East US (North Virginia)**. O Render não tem servidor no Brasil; a API faz várias consultas
+   - Region: uma região dos EUA que o Render também tenha (o projeto usa us-east-2, Ohio = `region: ohio` no
+     `render.yaml`). O Render não tem servidor no Brasil; a API faz várias consultas
      por pedido, então banco e API precisam estar perto um do outro.
    - Database Password: gerar e guardar num gerenciador de senhas.
 2. **Connect** → **Session pooler** → copiar a string **JDBC**.
@@ -20,7 +21,7 @@ Nenhuma senha ou chave vai para o git: tudo fica nas variáveis de ambiente de c
 
    | Variável | Valor |
    |---|---|
-   | `DB_URL` | a string JDBC **sem** usuário e senha: `jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require` (o host é o do seu projeto) |
+   | `DB_URL` | a string JDBC **sem** usuário e senha: `jdbc:postgresql://aws-0-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require` (o host é o do seu projeto) |
    | `DB_USER` | `postgres.<id-do-projeto>` (está na string do Supabase) |
    | `DB_PASSWORD` | a senha do banco |
    | `CORS_ORIGENS` | por enquanto `https://exemplo.netlify.app`; trocar no passo 5 |

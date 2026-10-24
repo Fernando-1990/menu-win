@@ -141,7 +141,7 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   - Para o sandbox real: `PIX_SIMULADO=false`.
 - Cardápio público expõe grupos (só opções disponíveis) e dados do checkout (`aberta`, entrega, `aceitaPix`, taxa, mínimo).
   Produto com grupo obrigatório sem opções suficientes aparece com `disponivel=false`.
-- Deploy (passo a passo em `docs/DEPLOY.md`): Supabase (banco, us-east-1) + Render (API, Docker, `render.yaml`)
+- Deploy (passo a passo em `docs/DEPLOY.md`): Supabase (banco, us-east-2 Ohio; API no Render em ohio) + Render (API, Docker, `render.yaml`)
   + Netlify (front). Profile `prod` ligado pelo Dockerfile: sem seed, Pix simulado travado, segredos obrigatórios.
   - Banco pelo **session pooler** (IPv4; o transaction pooler quebra os prepared statements do Hibernate).
   - Tabelas no schema `menuwin` (Flyway `schemas` + Hikari `schema`), não no `public`: o Supabase expõe o

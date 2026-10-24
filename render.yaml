@@ -4,7 +4,7 @@ services:
   - type: web
     name: menu-win-api
     runtime: docker
-    region: virginia          # mais perto do banco no Supabase (us-east-1)
+    region: ohio              # mesma região do banco no Supabase (us-east-2)
     plan: free                # free dorme após 15 min sem acesso; para loja de verdade, starter
     numInstances: 1           # SSE da cozinha é em memória: UMA instância
     healthCheckPath: /actuator/health
