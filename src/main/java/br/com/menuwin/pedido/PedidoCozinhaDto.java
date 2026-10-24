@@ -23,17 +23,20 @@ public record PedidoCozinhaDto(UUID id, int numero, StatusPedido status, TipoEnt
     /** adicionais já formatados para a tela: "Pão: Australiano", "Extras: 2x Bacon". */
     public record Item(String nome, int quantidade, String observacao, List<String> adicionais) {}
 
-    static PedidoCozinhaDto de(Pedido p, Pagamento pg) {
-        List<Item> itens = p.getItens().stream()
+    static List<Item> itensDe(Pedido p) {
+        return p.getItens().stream()
                 .map(i -> new Item(i.getNomeProduto(), i.getQuantidade(), i.getObservacao(),
                         i.getAdicionais().stream()
                                 .map(a -> a.getNomeGrupo() + ": " + (a.getQuantidade() > 1 ? a.getQuantidade() + "x " : "") + a.getNomeOpcao())
                                 .toList()))
                 .toList();
+    }
+
+    static PedidoCozinhaDto de(Pedido p, Pagamento pg) {
+        List<Item> itens = itensDe(p);
         boolean pendenteNoBalcao = pg != null && pg.getMetodo().recebidoPelaLoja() && pg.getStatus() == StatusPagamento.PENDENTE;
         return new PedidoCozinhaDto(p.getId(), p.getNumero(), p.getStatus(), p.getTipoEntrega(), p.getCriadoEm(),
-                p.getCliente() != null ? p.getCliente().getNome() : null,
-                p.getCliente() != null ? p.getCliente().getTelefone() : null,
+                p.getNomeCliente(), p.getTelefoneCliente(),   // snapshot do pedido, não o cadastro atual
                 p.getEnderecoEntrega(), p.getObservacao(), p.getTotal(),
                 pg != null ? pg.getMetodo() : null, pg != null ? pg.getStatus() : null,
                 pg != null ? pg.getTrocoPara() : null, pendenteNoBalcao, p.getMotivoCancelamento(), itens);

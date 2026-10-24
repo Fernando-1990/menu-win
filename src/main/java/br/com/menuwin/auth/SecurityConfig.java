@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/painel/cardapio/**").hasAnyRole("DONO", "GERENTE")
                         .requestMatchers("/api/painel/pagamentos/**").hasRole("DONO")   // conta onde o dinheiro cai
                         .requestMatchers("/api/painel/loja/**").hasRole("DONO")
+                        .requestMatchers("/api/painel/historico/**").hasAnyRole("DONO", "GERENTE")   // faturamento
                         .requestMatchers("/api/painel/**").authenticated()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(o -> o.jwt(jwt -> jwt.jwtAuthenticationConverter(papelComoRole())))

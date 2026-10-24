@@ -77,6 +77,8 @@ public class PedidoPublicoService {
 
         boolean pix = req.metodoPagamento() == MetodoPagamento.PIX;
         pedido.setCliente(clienteDoPedido(loja, req.cliente()));
+        pedido.setNomeCliente(req.cliente().nome().trim());                                   // snapshot
+        pedido.setTelefoneCliente(Cliente.normalizarTelefone(req.cliente().telefone()).orElseThrow());   // já validado acima
         // Pix só vai para a cozinha depois que o webhook confirmar; na entrega ou no caixa, vai direto.
         pedido.mudarStatus(pix ? StatusPedido.AGUARDANDO_PAGAMENTO : StatusPedido.RECEBIDO, null);
         pedido.setNumero(lojaRepository.reservarNumeroPedido(loja.getId()));   // por último: trava a linha da loja

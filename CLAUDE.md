@@ -101,6 +101,14 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   - Autenticação do SSE pelo header Authorization. EventSource nativo não manda header: o frontend usa
     SSE via fetch (ex.: `@microsoft/fetch-event-source`). NUNCA token na URL.
   - Despacho ASYNC liberado no SecurityConfig (continuação de requisição já autorizada).
+- Histórico (`/api/painel/historico/pedidos`, só DONO/GERENTE: mostra faturamento; `HistoricoPedidosService`):
+  - Lista paginada (30) por período `de`/`ate` (dias no fuso da loja; padrão hoje; máx. 1 ano), filtros
+    `status` (repetível) e `pagamentoPendente`. Mais recentes primeiro.
+  - Resumo do PERÍODO inteiro (não muda com os filtros): pedidos, vendido (sem cancelados e sem aguardando
+    Pix), recebido (pagamentos aprovados), a receber (pendentes de pedidos não cancelados), cancelados.
+  - `GET /{id}`: itens, pagamento e linha do tempo com o nome de quem mudou cada status.
+- Pedido guarda `nome_cliente`/`telefone_cliente` do momento (V5). Usar esses campos, não `pedido.cliente`
+  (o cadastro do cliente é atualizado a cada pedido do mesmo telefone).
 - `hibernate.default_batch_fetch_size=50`: coleções lazy em lote (lista da cozinha sem N+1).
 - CORS (`SecurityConfig.corsConfigurationSource`): o front (menu-win-front) chama a API direto do navegador.
   Só as origens de `menuwin.cors.origens` / `CORS_ORIGENS` (vírgula). Dev: `http://localhost:3000`. Sem cookies.
@@ -156,9 +164,11 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   Maven só copia recurso não filtrado (ex.: `.sql`) quando o original é mais novo que a cópia. Resultado:
   edição no seed não chegava na API. Se algo "não mudou" ao rodar, `mvn clean` primeiro.
   `SeedDevTest` cobre o seed de dev (os outros testes não o carregam).
+- Rodar `mvn` (test, compile, outro spring-boot:run) com a API LIGADA recompila `target/classes` por baixo dela:
+  classes ainda não carregadas falham e a JVM memoriza a falha (pedido dava 500 para sempre). Parar a API antes.
 
 ## Status
-Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (52 testes, PostgreSQL real via Testcontainers).
+Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (58 testes, PostgreSQL real via Testcontainers).
 - Testcontainers fixado em 1.21.4 no `pom.xml`: o 1.21.0 do Boot 3.5.0 não conversa com Docker 29+.
 - Login de exemplo do dev está no comentário de `db/dev/R__seed_dev.sql`.
 - Erros de validação (400) ainda não listam os campos no ProblemDetail; o frontend vai precisar.

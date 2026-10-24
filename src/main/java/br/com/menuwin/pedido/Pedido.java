@@ -40,6 +40,10 @@ public class Pedido {
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
+    /** Snapshot: como o cliente se identificou NESTE pedido (o cadastro do cliente muda depois). */
+    private String nomeCliente;
+    private String telefoneCliente;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrigemPedido origem = OrigemPedido.CARDAPIO;
@@ -87,6 +91,7 @@ public class Pedido {
 
     /** Só cresce: cada mudança de status vira uma linha (ver mudarStatus). */
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.PERSIST)
+    @OrderBy("criadoEm")
     @Setter(AccessLevel.NONE)
     private List<HistoricoStatusPedido> historico = new ArrayList<>();
 
