@@ -102,6 +102,8 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
     SSE via fetch (ex.: `@microsoft/fetch-event-source`). NUNCA token na URL.
   - Despacho ASYNC liberado no SecurityConfig (continuação de requisição já autorizada).
 - `hibernate.default_batch_fetch_size=50`: coleções lazy em lote (lista da cozinha sem N+1).
+- CORS (`SecurityConfig.corsConfigurationSource`): o front (menu-win-front) chama a API direto do navegador.
+  Só as origens de `menuwin.cors.origens` / `CORS_ORIGENS` (vírgula). Dev: `http://localhost:3000`. Sem cookies.
   - Erros 409 = estado mudou (loja fechou, preço mudou); 400 = pedido inválido.
 - Pix com Mercado Pago (pacote `pagamento/`):
   - O dinheiro cai na conta da PRÓPRIA loja: cada loja salva o access token dela
@@ -134,7 +136,7 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
 5. [x] Criação de pedido pelo cardápio público (validação de adicionais, número curto)
 6. [x] Pagamento Pix via gateway + webhook (Mercado Pago)
 7. [x] Tela da cozinha em tempo real (SSE)
-8. [ ] Frontend Next.js
+8. [x] Frontend Next.js — repositório separado: https://github.com/Fernando-1990/menu-win-front
 
 ### Fases seguintes
 - Fase 2: integração iFood (exige homologação), mesas com QR code
@@ -148,7 +150,7 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   `SeedDevTest` cobre o seed de dev (os outros testes não o carregam).
 
 ## Status
-Passos 1 a 7 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (44 testes, PostgreSQL real via Testcontainers).
+Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (47 testes, PostgreSQL real via Testcontainers).
 - Testcontainers fixado em 1.21.4 no `pom.xml`: o 1.21.0 do Boot 3.5.0 não conversa com Docker 29+.
 - Login de exemplo do dev está no comentário de `db/dev/R__seed_dev.sql`.
 - Erros de validação (400) ainda não listam os campos no ProblemDetail; o frontend vai precisar.
@@ -162,4 +164,5 @@ Passos 1 a 7 entregues (+ consumo no local / pagar no caixa), `mvn test` passand
 - Pendências da cozinha:
   - Não registra quem recebeu o pagamento nem o meio usado no caixa (dinheiro/cartão/Pix): fechamento de caixa (fase 4).
   - SSE em memória: não escala para mais de uma instância (ver decisão acima).
-Próximo: passo 8 (frontend Next.js: cardápio público PWA, painel do lojista, tela da cozinha).
+Fase 1 (MVP) completa: passos 1 a 8. Próximos candidatos: teste do Pix no sandbox do MP,
+idempotência e rate limit no pedido público, e a Fase 2.

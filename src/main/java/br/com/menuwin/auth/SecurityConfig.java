@@ -2,6 +2,11 @@ package br.com.menuwin.auth;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.config.Customizer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +29,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * API stateless:
@@ -39,6 +45,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain api(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())   // usa o corsConfigurationSource abaixo
                 .csrf(csrf -> csrf.disable())   // sem cookie de sessão: token vai no header
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(b -> b.disable())
@@ -59,6 +66,22 @@ public class SecurityConfig {
                 .oauth2ResourceServer(o -> o.jwt(jwt -> jwt.jwtAuthenticationConverter(papelComoRole())))
                 .addFilterAfter(new PainelTenantFilter(), BearerTokenAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * O frontend (Next.js) chama a API direto do navegador. Só as origens de menuwin.cors.origens
+     * (CORS_ORIGENS em produção) podem. Sem cookies: autenticação é o header Authorization.
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(@Value("${menuwin.cors.origens:}") List<String> origens) {
+        CorsConfiguration cors = new CorsConfiguration();
+        cors.setAllowedOrigins(origens.stream().filter(o -> !o.isBlank()).toList());
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Last-Event-ID"));
+        cors.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", cors);
+        return source;
     }
 
     @Bean
