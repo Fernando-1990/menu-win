@@ -28,6 +28,16 @@ Comer aqui e pagar ao sair: `"tipoEntrega": "CONSUMO_LOCAL"` + `"metodoPagamento
 Pix: `"metodoPagamento": "PIX"` (exige `cliente.email`). A resposta traz `pix.copiaECola` e `pix.qrCodeBase64`;
 acompanhe em `GET /api/public/lojas/{slug}/pedidos/{id}` até `status` virar `RECEBIDO`.
 
+## Pix simulado (homologar sem conta no Mercado Pago)
+No profile dev o Pix vem **simulado** (log: `PIX SIMULADO ATIVO`). Nada é cobrado de verdade:
+1. No painel (DONO), em Configurações, conecte o Pix com qualquer texto (ex.: `teste`).
+2. Faça um pedido com Pix pelo cardápio. A tela do pedido mostra **Simular pagamento aprovado / Pix expirado**.
+3. O botão segue o mesmo caminho do webhook real: aprovado vai para a cozinha; expirado cancela.
+
+Pela API: `POST /api/public/lojas/{slug}/simulador-pix/{pedidoId}?status=APROVADO`.
+Só funciona nos profiles dev/test (em outro profile a API nem sobe com ele ligado).
+Para testar no sandbox real do Mercado Pago, suba com `PIX_SIMULADO=false`.
+
 ## Pix (Mercado Pago)
 1. Crie uma aplicação em https://www.mercadopago.com.br/developers e copie o **access token de teste** (`TEST-...`).
 2. Faça login no painel como DONO e salve o token:

@@ -252,6 +252,16 @@ class PixFluxoTest {
     }
 
     @Test
+    void simuladorNaoExisteComOPixDeVerdade() throws Exception {
+        String pedidoId = JsonPath.read(pedirPix(loja).andReturn().getResponse().getContentAsString(), "$.id");
+        mvc.perform(post("/api/public/lojas/" + loja.getSlug() + "/simulador-pix/" + pedidoId + "?status=APROVADO"))
+                .andExpect(status().isNotFound());
+        consultar(pedidoId).andExpect(jsonPath("$.status").value("AGUARDANDO_PAGAMENTO"));
+        mvc.perform(get("/api/public/lojas/" + loja.getSlug() + "/cardapio"))
+                .andExpect(jsonPath("$.loja.pixSimulado").value(false));
+    }
+
+    @Test
     void pixExigeEmailELojaConfigurada() throws Exception {
         mvc.perform(post("/api/public/lojas/" + loja.getSlug() + "/pedidos").contentType(MediaType.APPLICATION_JSON)
                         .content(corpoPix(produto, null)))

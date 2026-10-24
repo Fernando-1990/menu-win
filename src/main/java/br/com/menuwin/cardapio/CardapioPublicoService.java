@@ -52,7 +52,7 @@ public class CardapioPublicoService {
         return new CardapioResponse(
                 new LojaInfo(loja.getNome(), loja.getLogoUrl(), loja.getCapaUrl(), loja.getCorPrimaria(), loja.getLayout(),
                         loja.estaAbertaAgora(), loja.isAceitaRetirada(), loja.isAceitaDelivery(), loja.isAceitaConsumoLocal(),
-                        credenciais.aceitaPix(), loja.isAceitaPagarNoCaixa(),
+                        credenciais.aceitaPix(), credenciais.pixSimulado(), loja.isAceitaPagarNoCaixa(),
                         loja.getTaxaEntregaPadrao(), loja.getPedidoMinimo()),
                 resultado);
     }

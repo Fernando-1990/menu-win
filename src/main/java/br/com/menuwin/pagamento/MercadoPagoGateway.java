@@ -3,6 +3,7 @@ package br.com.menuwin.pagamento;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ import static br.com.menuwin.loja.Loja.FUSO;
  * Cada chamada usa o access token da loja.
  */
 @Component
+@ConditionalOnProperty(name = "menuwin.pix.simulado", havingValue = "false", matchIfMissing = true)
 public class MercadoPagoGateway implements GatewayPagamento {
 
     /** Formato que o MP aceita em date_of_expiration. */

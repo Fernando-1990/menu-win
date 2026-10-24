@@ -21,7 +21,12 @@ public class CredenciaisService {
     private final Cifrador cifrador;
     private final TransactionTemplate tx;
 
-    public record StatusCredencial(boolean configurado, boolean modoTeste) {}
+    /** simulado: Pix de mentira ligado (só dev); qualquer token é aceito. */
+    public record StatusCredencial(boolean configurado, boolean modoTeste, boolean simulado) {}
+
+    public boolean pixSimulado() {
+        return gateway instanceof SimuladorPixGateway;
+    }
 
     /** Valida o token no próprio Mercado Pago antes de salvar (chamada HTTP fora de transação). */
     public StatusCredencial salvarMercadoPago(String accessToken) {
@@ -40,15 +45,15 @@ public class CredenciaisService {
             c.setAccessTokenCifrado(cifrador.cifrar(token));
             c.setModoTeste(token.startsWith("TEST-"));
             repository.save(c);
-            return new StatusCredencial(true, c.isModoTeste());
+            return new StatusCredencial(true, c.isModoTeste(), pixSimulado());
         });
     }
 
     @Transactional(readOnly = true)
     public StatusCredencial statusMercadoPago() {
         return repository.findByGateway(CredencialGateway.MERCADO_PAGO)
-                .map(c -> new StatusCredencial(true, c.isModoTeste()))
-                .orElse(new StatusCredencial(false, false));
+                .map(c -> new StatusCredencial(true, c.isModoTeste(), pixSimulado()))
+                .orElse(new StatusCredencial(false, false, pixSimulado()));
     }
 
     @Transactional

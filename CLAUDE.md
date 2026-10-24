@@ -123,6 +123,14 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   - MP exige e-mail do pagador: Pix sem e-mail do cliente dá 400.
   - `GET /api/public/lojas/{slug}/pedidos/{id}`: status para o cliente (polling na tela do Pix).
   - `URL_PUBLICA` (https) define a notification_url; vazia = sem webhook (dev local precisa de túnel, ex. ngrok).
+- Pix simulado (`menuwin.pix.simulado`, padrão LIGADO no profile dev via `PIX_SIMULADO`, desligado no resto):
+  - `SimuladorPixGateway` substitui o `MercadoPagoGateway` (`@ConditionalOnProperty`). Aceita qualquer token.
+  - TRAVA: o construtor recusa subir fora dos profiles dev/test (API não inicia). Testado.
+  - `POST /api/public/lojas/{slug}/simulador-pix/{pedidoId}?status=APROVADO|EXPIRADO|RECUSADO` só existe
+    com o simulador e chama o MESMO `PixService.processarNotificacao` do webhook (valor, loja, idempotência).
+  - Cobranças em memória: reiniciar a API perde as simuladas abertas.
+  - Cardápio público e status da credencial expõem `pixSimulado`/`simulado`; o front mostra os botões.
+  - Para o sandbox real: `PIX_SIMULADO=false`.
 - Cardápio público expõe grupos (só opções disponíveis) e dados do checkout (`aberta`, entrega, `aceitaPix`, taxa, mínimo).
   Produto com grupo obrigatório sem opções suficientes aparece com `disponivel=false`.
 
@@ -150,7 +158,7 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   `SeedDevTest` cobre o seed de dev (os outros testes não o carregam).
 
 ## Status
-Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (47 testes, PostgreSQL real via Testcontainers).
+Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (52 testes, PostgreSQL real via Testcontainers).
 - Testcontainers fixado em 1.21.4 no `pom.xml`: o 1.21.0 do Boot 3.5.0 não conversa com Docker 29+.
 - Login de exemplo do dev está no comentário de `db/dev/R__seed_dev.sql`.
 - Erros de validação (400) ainda não listam os campos no ProblemDetail; o frontend vai precisar.
@@ -158,7 +166,11 @@ Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passand
   - Sem idempotência: retry de rede pode criar pedido duplicado (pensar em `Idempotency-Key`).
   - Sem rate limit na rota pública de pedido.
 - Pendências do Pix:
-  - NÃO testado contra o sandbox real do MP (testes usam servidor simulado). Fazer com credenciais TEST-.
+  - NÃO testado contra o sandbox real do MP. Pela doc do MP, aprovação de Pix em teste (nome "APRO") só
+    existe na API de Orders (`/v1/orders`); a integração usa `/v1/payments`, onde Pix de teste fica pendente.
+    Migrar para Orders antes de testar no sandbox (contas de teste vendedor/comprador em "Suas integrações").
+  - Token de conta de teste começa com `APP_USR-` (não só `TEST-`): `modoTeste` por prefixo erra.
+    Ver `tags` de `/users/me` (test_user) ao validar a credencial.
   - Sem job para expirar Pix se o webhook nunca chegar (hoje depende do "cancelled" do MP).
   - Sem validação da assinatura `x-signature` do webhook (defesa extra; ver decisão acima).
 - Pendências da cozinha:

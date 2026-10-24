@@ -31,6 +31,7 @@ menuwin:
     chave: ${CRYPTO_KEY}         # obrigatório fora do dev: 32 bytes em Base64 (AES-256). Trocar = perder as credenciais salvas
   pix:
     expiracao: 30m
+    simulado: false              # true = Pix de mentira para homologar (só sobe em dev/test)
   mercadopago:
     api-url: https://api.mercadopago.com
 
@@ -50,3 +51,5 @@ menuwin:
     secret: ${JWT_SECRET:dev-somente-local-troque-em-producao-0123456789}
   crypto:
     chave: ${CRYPTO_KEY:ZGV2LXNvbWVudGUtbG9jYWwtY2hhdmUtMzJieXRlcyE=}
+  pix:
+    simulado: ${PIX_SIMULADO:true}   # PIX_SIMULADO=false para testar no sandbox real do Mercado Pago

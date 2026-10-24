@@ -11,7 +11,7 @@ public record CardapioResponse(LojaInfo loja, List<CategoriaDto> categorias) {
     /** aberta, entrega e valores: o que o checkout precisa para montar o pedido. */
     public record LojaInfo(String nome, String logoUrl, String capaUrl, String corPrimaria, Layout layout,
                            boolean aberta, boolean aceitaRetirada, boolean aceitaDelivery, boolean aceitaConsumoLocal,
-                           boolean aceitaPix, boolean aceitaPagarNoCaixa,
+                           boolean aceitaPix, boolean pixSimulado, boolean aceitaPagarNoCaixa,
                            BigDecimal taxaEntrega, BigDecimal pedidoMinimo) {}
 
     public record CategoriaDto(UUID id, String nome, List<ProdutoDto> produtos) {}
