@@ -1,3 +1,16 @@
+server:
+  port: ${PORT:8080}                       # o Render informa a porta em PORT
+  forward-headers-strategy: framework      # atrás do proxy https da hospedagem
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health                    # só o health; o resto do actuator fica fechado
+  endpoint:
+    health:
+      show-details: never
+
 spring:
   application:
     name: menu-win-api
@@ -34,6 +47,27 @@ menuwin:
     simulado: false              # true = Pix de mentira para homologar (só sobe em dev/test)
   mercadopago:
     api-url: https://api.mercadopago.com
+
+---
+# Produção (Render + Supabase). O Dockerfile liga este profile.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}                         # session pooler do Supabase (IPv4, porta 5432), com sslmode=require
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL:5}      # o pooler do plano grátis aceita poucas conexões
+      schema: menuwin
+  flyway:
+    schemas: menuwin                       # schema próprio: o "public" do Supabase fica exposto pela Data API
+    default-schema: menuwin
+server:
+  tomcat:
+    threads:
+      max: ${TOMCAT_THREADS:50}            # instância pequena; cada thread custa memória (SSE não segura thread)
 
 ---
 spring:

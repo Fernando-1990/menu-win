@@ -7,6 +7,9 @@ mvn spring-boot:run           # sobe na 8080, aplica migrations + dados de exemp
 curl http://localhost:8080/api/public/lojas/padaria-demo/cardapio
 ```
 
+## Produção
+Supabase + Render + Netlify: passo a passo em [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Pedido pelo cardápio público
 `POST /api/public/lojas/{slug}/pedidos` (sem login). Exemplo:
 ```json

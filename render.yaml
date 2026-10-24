@@ -1,0 +1,27 @@
+# Blueprint do Render: New > Blueprint > este repositório. Os valores "sync: false" são pedidos na criação.
+# Passo a passo completo em docs/DEPLOY.md.
+services:
+  - type: web
+    name: menu-win-api
+    runtime: docker
+    region: virginia          # mais perto do banco no Supabase (us-east-1)
+    plan: free                # free dorme após 15 min sem acesso; para loja de verdade, starter
+    numInstances: 1           # SSE da cozinha é em memória: UMA instância
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # o Render gera 256 bits em Base64: serve para os dois (32 bytes decodificados)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CRYPTO_KEY
+        generateValue: true   # guardar uma cópia: trocar depois = perder as credenciais do Mercado Pago salvas
+      - key: CORS_ORIGENS
+        sync: false
+      - key: URL_PUBLICA
+        sync: false

@@ -141,6 +141,15 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   - Para o sandbox real: `PIX_SIMULADO=false`.
 - Cardápio público expõe grupos (só opções disponíveis) e dados do checkout (`aberta`, entrega, `aceitaPix`, taxa, mínimo).
   Produto com grupo obrigatório sem opções suficientes aparece com `disponivel=false`.
+- Deploy (passo a passo em `docs/DEPLOY.md`): Supabase (banco, us-east-1) + Render (API, Docker, `render.yaml`)
+  + Netlify (front). Profile `prod` ligado pelo Dockerfile: sem seed, Pix simulado travado, segredos obrigatórios.
+  - Banco pelo **session pooler** (IPv4; o transaction pooler quebra os prepared statements do Hibernate).
+  - Tabelas no schema `menuwin` (Flyway `schemas` + Hikari `schema`), não no `public`: o Supabase expõe o
+    `public` pela Data API. Query nativa depende do `search_path` = `menuwin` que o Hikari define.
+  - Memória: 512 MB sem swap no Render. Flags medidas no Dockerfile (~440 MB sob carga); mudar = medir de novo
+    com `docker run --memory=512m --memory-swap=512m`.
+  - `/actuator/health` é o único endpoint do actuator exposto (health check do Render).
+  - Primeira loja em produção: `docs/primeira-loja.sql` no SQL Editor (hash BCrypt via pgcrypto do Supabase).
 
 ## Roadmap
 ### Fase 1 — MVP
@@ -164,6 +173,8 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   Maven só copia recurso não filtrado (ex.: `.sql`) quando o original é mais novo que a cópia. Resultado:
   edição no seed não chegava na API. Se algo "não mudou" ao rodar, `mvn clean` primeiro.
   `SeedDevTest` cobre o seed de dev (os outros testes não o carregam).
+- Teste de memória com Docker Desktop: o limite `--memory` sozinho deixa usar swap e esconde o estouro.
+  Usar também `--memory-swap` igual. Com heap de 256 MB a JVM passou de 512 MB e foi morta (137).
 - Rodar `mvn` (test, compile, outro spring-boot:run) com a API LIGADA recompila `target/classes` por baixo dela:
   classes ainda não carregadas falham e a JVM memoriza a falha (pedido dava 500 para sempre). Parar a API antes.
 

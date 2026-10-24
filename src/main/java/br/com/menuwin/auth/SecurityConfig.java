@@ -54,6 +54,7 @@ public class SecurityConfig {
                         // o despacho ASYNC do SSE é continuação de uma requisição já autorizada
                         .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .requestMatchers("/api/public/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()   // health check da hospedagem
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         // "acabou hoje" é coisa da cozinha; o resto do cardápio, só DONO e GERENTE
                         .requestMatchers(HttpMethod.PATCH, "/api/painel/cardapio/produtos/*/disponibilidade")
