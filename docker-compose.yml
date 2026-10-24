@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: menuwin-db
+    environment:
+      POSTGRES_DB: menuwin
+      POSTGRES_USER: menuwin
+      POSTGRES_PASSWORD: menuwin
+    ports:
+      - "5433:5432"   # 5433 no host: não briga com um PostgreSQL instalado localmente
+    volumes:
+      - menuwin-data:/var/lib/postgresql/data
+volumes:
+  menuwin-data:

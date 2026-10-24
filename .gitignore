@@ -1,0 +1,11 @@
+target/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# segredos locais (credenciais do Mercado Pago, chaves): nunca versionar
+application-local.yml
+src/main/resources/application-local.yml
+.env
+*.env

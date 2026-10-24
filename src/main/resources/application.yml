@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: menu-win-api
+  profiles:
+    default: dev
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/menuwin}
+    username: ${DB_USER:menuwin}
+    password: ${DB_PASSWORD:menuwin}
+  mvc:
+    problemdetails:
+      enabled: true              # erros em JSON (RFC 9457) com a mensagem em "detail"
+  jpa:
+    open-in-view: false          # sessão só existe dentro de @Transactional (essencial p/ o tenant)
+    hibernate:
+      ddl-auto: validate         # quem cria tabela é o Flyway; o Hibernate só confere o mapeamento
+    properties:
+      hibernate.default_batch_fetch_size: 50   # coleções lazy (itens, adicionais) em lote, sem N+1
+  flyway:
+    locations: classpath:db/migration
+
+menuwin:
+  # URL pública da API (https). O Mercado Pago manda os webhooks para cá. Vazio = sem webhook.
+  url-publica: ${URL_PUBLICA:}
+  jwt:
+    secret: ${JWT_SECRET}        # obrigatório fora do dev: >= 32 bytes, sem valor padrão de propósito
+    expiracao: 8h
+  crypto:
+    chave: ${CRYPTO_KEY}         # obrigatório fora do dev: 32 bytes em Base64 (AES-256). Trocar = perder as credenciais salvas
+  pix:
+    expiracao: 30m
+  mercadopago:
+    api-url: https://api.mercadopago.com
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev   # inclui dados de exemplo
+  jpa:
+    show-sql: true
+menuwin:
+  jwt:
+    secret: ${JWT_SECRET:dev-somente-local-troque-em-producao-0123456789}
+  crypto:
+    chave: ${CRYPTO_KEY:ZGV2LXNvbWVudGUtbG9jYWwtY2hhdmUtMzJieXRlcyE=}
