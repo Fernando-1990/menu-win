@@ -16,7 +16,7 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
 - Frontend (ainda não iniciado): Next.js — cardápio público (PWA), painel do lojista, tela da cozinha
 
 ## Comandos
-- `docker compose up -d` — sobe o PostgreSQL
+- `docker compose up -d` — sobe o PostgreSQL (porta 5433 no host, para não brigar com um PostgreSQL local)
 - `mvn test` — testes (inclui validação do mapeamento JPA contra o schema)
 - `mvn spring-boot:run` — sobe a API com dados de exemplo (profile dev)
 - `curl http://localhost:8080/api/public/lojas/padaria-demo/cardapio`
@@ -140,6 +140,12 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
 - Fase 2: integração iFood (exige homologação), mesas com QR code
 - Fase 3: setores e impressão, app do garçom, delivery/motoboy, cupons e fidelidade, WhatsApp
 - Fase 4: estoque por XML de nota, NFC-e (via API terceira), financeiro
+
+## Armadilhas já encontradas
+- Recurso velho em `target/classes`: o zip original veio com datas no futuro (relógio adiantado), e o
+  Maven só copia recurso não filtrado (ex.: `.sql`) quando o original é mais novo que a cópia. Resultado:
+  edição no seed não chegava na API. Se algo "não mudou" ao rodar, `mvn clean` primeiro.
+  `SeedDevTest` cobre o seed de dev (os outros testes não o carregam).
 
 ## Status
 Passos 1 a 7 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (44 testes, PostgreSQL real via Testcontainers).
