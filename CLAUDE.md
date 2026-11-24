@@ -173,6 +173,9 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   Maven só copia recurso não filtrado (ex.: `.sql`) quando o original é mais novo que a cópia. Resultado:
   edição no seed não chegava na API. Se algo "não mudou" ao rodar, `mvn clean` primeiro.
   `SeedDevTest` cobre o seed de dev (os outros testes não o carregam).
+- `produto_grupos_adicionais.ordem` é índice de `@OrderColumn` (base 0, sem buracos). Inserir por SQL com
+  ordem começando em 1 deixa um `null` na lista e o cardápio público inteiro da loja dá 500.
+  Dados por SQL (ex.: `docs/demo-padaria.sql`): sempre 0, 1, 2...
 - Teste de memória com Docker Desktop: o limite `--memory` sozinho deixa usar swap e esconde o estouro.
   Usar também `--memory-swap` igual. Com heap de 256 MB a JVM passou de 512 MB e foi morta (137).
 - Rodar `mvn` (test, compile, outro spring-boot:run) com a API LIGADA recompila `target/classes` por baixo dela:
