@@ -3,14 +3,18 @@ package br.com.menuwin.cardapio;
 import br.com.menuwin.loja.Layout;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public record CardapioResponse(LojaInfo loja, List<CategoriaDto> categorias) {
 
-    /** aberta, entrega e valores: o que o checkout precisa para montar o pedido. */
+    /**
+     * aberta, entrega e valores: o que o checkout precisa para montar o pedido.
+     * pausada: o dono pausou pelo painel. abreEm: próximo horário (fuso de Brasília), só quando está fora do horário.
+     */
     public record LojaInfo(String nome, String logoUrl, String capaUrl, String corPrimaria, Layout layout,
-                           boolean aberta, boolean aceitaRetirada, boolean aceitaDelivery, boolean aceitaConsumoLocal,
+                           boolean aberta, boolean pausada, LocalDateTime abreEm, boolean aceitaRetirada, boolean aceitaDelivery, boolean aceitaConsumoLocal,
                            boolean aceitaPix, boolean pixSimulado, boolean aceitaPagarNoCaixa,
                            BigDecimal taxaEntrega, BigDecimal pedidoMinimo) {}
 

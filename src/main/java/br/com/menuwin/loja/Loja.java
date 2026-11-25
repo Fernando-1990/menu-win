@@ -14,7 +14,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -74,6 +76,9 @@ public class Loja {
     private int tempoPreparoMin = 30;
     private boolean ativa = true;
 
+    /** Pausa manual do painel. Vale até alguém despausar: não volta sozinha. */
+    private boolean pedidosPausados;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Instant criadoEm;
@@ -88,9 +93,31 @@ public class Loja {
     /** Ainda não há fuso por loja: todas no horário de Brasília. */
     public static final ZoneId FUSO = ZoneId.of("America/Sao_Paulo");
 
-    /** Sem horário cadastrado = sempre aberta (MVP: a padaria pode começar sem configurar). */
+    /** Aceita pedido agora: não está pausada e está no horário. */
     public boolean estaAberta(LocalDateTime agora) {
+        return !pedidosPausados && estaNoHorario(agora);
+    }
+
+    /** Sem horário cadastrado = sempre no horário (MVP: a padaria pode começar sem configurar). */
+    public boolean estaNoHorario(LocalDateTime agora) {
         return horarios.isEmpty() || horarios.stream().anyMatch(h -> h.cobre(agora));
+    }
+
+    /**
+     * Quando o próximo horário começa, para o cardápio dizer "abre amanhã às 06:00".
+     * Vazio se já está no horário ou se não há horário cadastrado. A pausa não entra: não tem hora para acabar.
+     */
+    public Optional<LocalDateTime> proximaAbertura(LocalDateTime agora) {
+        if (estaNoHorario(agora)) {
+            return Optional.empty();
+        }
+        return horarios.stream()
+                .map(h -> {
+                    int dias = Math.floorMod(h.getDiaSemana() - agora.getDayOfWeek().getValue(), 7);
+                    LocalDateTime inicio = agora.toLocalDate().plusDays(dias).atTime(h.getAbre());
+                    return inicio.isAfter(agora) ? inicio : inicio.plusDays(7);
+                })
+                .min(Comparator.naturalOrder());
     }
 
     public boolean estaAbertaAgora() {

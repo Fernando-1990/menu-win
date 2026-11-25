@@ -128,6 +128,10 @@ public class PedidoPublicoService {
     // ---------------------------------------------------------------- loja e entrega
 
     private void validarLoja(Loja loja, CriarPedidoRequest req) {
+        if (loja.isPedidosPausados()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A loja pausou os pedidos por alguns instantes. Tente de novo daqui a pouco");
+        }
         if (!loja.estaAbertaAgora()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A loja está fechada agora");
         }

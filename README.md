@@ -85,6 +85,15 @@ senha atual errada → `400`; 5 erros em 15 min → `429`. Tokens já emitidos c
 `GET` / `PUT` com `aceitaRetirada`, `aceitaDelivery`, `aceitaConsumoLocal`, `aceitaPagarNoCaixa`,
 `taxaEntregaPadrao`, `pedidoMinimo`, `tempoPreparoMin`.
 
+### Funcionamento (`/api/painel/funcionamento`)
+| Rota | Quem | O que faz |
+|---|---|---|
+| `GET` | Todos | `pedidosPausados`, `aberta`, `abreEm` e `horarios` |
+| `PUT /horarios` | DONO | `{"horarios": [{"diaSemana": 1, "abre": "07:00", "fecha": "19:00"}]}` substitui a semana (1 = segunda; `[]` = qualquer hora; fecha < abre = vira a noite) |
+| `PUT /pausa` | Todos | `{"pausado": true}` para de aceitar pedidos até alguém mandar `false` |
+
+Fora do horário ou pausada, o pedido público dá `409`; o cardápio traz `aberta`, `pausada` e `abreEm`.
+
 ### Cardápio no painel (`/api/painel/cardapio`, papéis DONO e GERENTE)
 | Recurso | Rotas |
 |---|---|

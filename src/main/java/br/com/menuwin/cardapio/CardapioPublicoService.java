@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,9 +50,11 @@ public class CardapioPublicoService {
                 .filter(c -> !c.produtos().isEmpty())
                 .toList();
 
+        LocalDateTime agora = LocalDateTime.now(Loja.FUSO);
         return new CardapioResponse(
                 new LojaInfo(loja.getNome(), loja.getLogoUrl(), loja.getCapaUrl(), loja.getCorPrimaria(), loja.getLayout(),
-                        loja.estaAbertaAgora(), loja.isAceitaRetirada(), loja.isAceitaDelivery(), loja.isAceitaConsumoLocal(),
+                        loja.estaAberta(agora), loja.isPedidosPausados(), loja.proximaAbertura(agora).orElse(null),
+                        loja.isAceitaRetirada(), loja.isAceitaDelivery(), loja.isAceitaConsumoLocal(),
                         credenciais.aceitaPix(), credenciais.pixSimulado(), loja.isAceitaPagarNoCaixa(),
                         loja.getTaxaEntregaPadrao(), loja.getPedidoMinimo()),
                 resultado);

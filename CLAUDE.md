@@ -70,11 +70,18 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   - Cliente via upsert nativo (`ClienteRepository.salvarPorTelefone`, `ON CONFLICT`): find-then-insert
     estourava a UNIQUE com dois pedidos simultâneos do mesmo cliente novo (pego no teste de concorrência).
   - Telefone normalizado para `55DDDNUMERO` (`Cliente.normalizarTelefone`).
-  - Loja fechada → 409. Sem horários cadastrados = sempre aberta. Fuso fixo `America/Sao_Paulo` (`Loja.FUSO`).
+  - Loja fechada ou pausada → 409. Sem horários cadastrados = sempre no horário. Fuso fixo `America/Sao_Paulo` (`Loja.FUSO`).
     Horário que vira a noite (18:00–02:00) pertence ao dia em que abriu.
   - Na entrega (dinheiro/cartão) e `NO_CAIXA` nascem `RECEBIDO` (cozinha na hora); PIX nasce
     `AGUARDANDO_PAGAMENTO`; `CARTAO_ONLINE` dá 400.
   - Validação na ordem da tela: primeiro tipo de atendimento, depois forma de pagamento.
+- Funcionamento (`/api/painel/funcionamento`, `FuncionamentoService`): `GET` (todos) devolve pausa, `aberta`, `abreEm`
+  e os horários; `PUT /horarios` (só DONO) substitui a semana inteira (lista vazia = aceita a qualquer hora);
+  `PUT /pausa` `{"pausado": true}` (todos os papéis: quem está na cozinha vê que lotou).
+  - Pausa é manual e não volta sozinha (coluna `pedidos_pausados`, V7). `Loja.estaAberta` = sem pausa E no horário.
+  - Pedido com a loja pausada → 409 com mensagem própria ("pausou os pedidos..."), separada de "fechada agora".
+  - Cardápio público traz `pausada` e `abreEm` (próximo início de horário, `LocalDateTime` de Brasília, só fora
+    do horário) para o front dizer "abre amanhã às 07:00".
 - Operação da loja (`GET/PUT /api/painel/loja/operacao`, só DONO, `OperacaoLojaService`):
   retirada, delivery, consumo no local, pagar no caixa, taxa, pedido mínimo, tempo de preparo.
   - `aceitaConsumoLocal` libera `CONSUMO_LOCAL` ("comer aqui") no cardápio.
@@ -182,7 +189,7 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   classes ainda não carregadas falham e a JVM memoriza a falha (pedido dava 500 para sempre). Parar a API antes.
 
 ## Status
-Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (76 testes, PostgreSQL real via Testcontainers).
+Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (80 testes, PostgreSQL real via Testcontainers).
 - Troca de senha: `PUT /api/painel/conta/senha` (qualquer papel, exige a senha atual; 5 erros em 15 min = 429,
   em memória em `TentativasSenha`). Pendente: revogar tokens antigos ao trocar (hoje valem até expirar, 8h);
   "esqueci minha senha" (precisa de envio de e-mail; até lá, reset via SQL como em `docs/primeira-loja.sql`).

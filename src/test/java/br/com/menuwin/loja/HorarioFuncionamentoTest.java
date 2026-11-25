@@ -39,6 +39,27 @@ class HorarioFuncionamentoTest {
         assertThat(loja.estaAberta(em("2026-10-26T07:00"))).isTrue();
     }
 
+    @Test
+    void pausaFechaMesmoNoHorario() {
+        Loja loja = new Loja();
+        loja.setPedidosPausados(true);
+        assertThat(loja.estaAberta(em("2026-10-26T07:00"))).isFalse();
+        assertThat(loja.estaNoHorario(em("2026-10-26T07:00"))).isTrue();
+        assertThat(loja.proximaAbertura(em("2026-10-26T07:00"))).isEmpty();   // pausa não tem hora para acabar
+    }
+
+    @Test
+    void proximaAberturaProcuraNaSemana() {
+        Loja loja = new Loja();
+        assertThat(loja.proximaAbertura(em("2026-10-26T03:00"))).isEmpty();   // sem horário: sempre aberta
+        loja.getHorarios().add(horario(1, "06:00", "12:00"));   // segunda
+        loja.getHorarios().add(horario(3, "06:00", "12:00"));   // quarta
+        assertThat(loja.proximaAbertura(em("2026-10-26T03:00"))).contains(em("2026-10-26T06:00"));   // hoje mais tarde
+        assertThat(loja.proximaAbertura(em("2026-10-26T07:00"))).isEmpty();                         // aberta agora
+        assertThat(loja.proximaAbertura(em("2026-10-26T13:00"))).contains(em("2026-10-28T06:00"));   // quarta
+        assertThat(loja.proximaAbertura(em("2026-10-28T12:00"))).contains(em("2026-11-02T06:00"));   // segunda seguinte
+    }
+
     private static HorarioFuncionamento horario(int dia, String abre, String fecha) {
         HorarioFuncionamento h = new HorarioFuncionamento();
         h.setDiaSemana((short) dia);
