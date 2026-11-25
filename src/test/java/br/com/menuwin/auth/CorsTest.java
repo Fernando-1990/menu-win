@@ -40,6 +40,16 @@ class CorsTest {
     }
 
     @Test
+    void pedidoPublicoPodeMandarIdempotencyKey() throws Exception {
+        mvc.perform(options("/api/public/lojas/qualquer/pedidos")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "content-type,idempotency-key"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Headers", org.hamcrest.Matchers.containsStringIgnoringCase("idempotency-key")));
+    }
+
+    @Test
     void outraOrigemERecusada() throws Exception {
         mvc.perform(options("/api/auth/login")
                         .header("Origin", "https://site-malicioso.example")

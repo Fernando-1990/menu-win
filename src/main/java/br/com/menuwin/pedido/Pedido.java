@@ -51,6 +51,10 @@ public class Pedido {
     /** Id do pedido na plataforma de origem (iFood). */
     private String idExterno;
 
+    /** Header Idempotency-Key do pedido público: a mesma chave na mesma loja devolve este pedido. */
+    @Column(updatable = false)
+    private UUID chaveIdempotencia;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoEntrega tipoEntrega;

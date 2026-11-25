@@ -6,3 +6,8 @@ menuwin:
     secret: segredo-de-teste-com-mais-de-32-bytes-0123456789
   crypto:
     chave: Y2hhdmUtZGUtdGVzdGUtY29tLTMyLWJ5dGVzLW9rISE=
+  pedidos:
+    limite:                      # alto: os testes fazem muitos pedidos do mesmo IP e telefone (LimitePedidoPublicoTest baixa)
+      ip:       { maximo: 1000, periodo: 10m }
+      telefone: { maximo: 1000, periodo: 10m }
+      loja:     { maximo: 1000, periodo: 10m }

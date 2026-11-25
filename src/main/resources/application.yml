@@ -42,9 +42,14 @@ menuwin:
     expiracao: 8h
   crypto:
     chave: ${CRYPTO_KEY}         # obrigatório fora do dev: 32 bytes em Base64 (AES-256). Trocar = perder as credenciais salvas
+  pedidos:
+    limite:                      # pedidos públicos por loja (ver LimitesPedidoProperties)
+      ip:       { maximo: 30, periodo: 10m }    # folgado: Wi-Fi da loja põe vários clientes no mesmo IP
+      telefone: { maximo: 5,  periodo: 10m }
+      loja:     { maximo: 60, periodo: 10m }    # teto da loja: segura enxurrada de pedidos falsos
   pix:
     expiracao: 30m
-    simulado: false              # true = Pix de mentira para homologar (só sobe em dev/test)
+    simulado: false             # true = Pix de mentira para homologar (só sobe em dev/test)
   mercadopago:
     api-url: https://api.mercadopago.com
 

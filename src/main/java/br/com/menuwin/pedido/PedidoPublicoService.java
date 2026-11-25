@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -58,12 +59,17 @@ public class PedidoPublicoService {
     private final PagamentoRepository pagamentoRepository;
     private final NotificadorCozinha notificador;
 
+    /**
+     * chave (Idempotency-Key, opcional): gravada no pedido; a unique (loja, chave) barra o segundo de dois
+     * envios simultâneos com a mesma chave (DataIntegrityViolationException no saveAndFlush).
+     */
     @Transactional
-    public PedidoCriadoResponse criar(CriarPedidoRequest req) {
+    public PedidoCriadoResponse criar(CriarPedidoRequest req, UUID chave) {
         Loja loja = lojaRepository.findById(TenantContext.getObrigatorio()).orElseThrow();
         validarLoja(loja, req);
 
         Pedido pedido = new Pedido();
+        pedido.setChaveIdempotencia(chave);
         pedido.setOrigem(OrigemPedido.CARDAPIO);
         pedido.setTipoEntrega(req.tipoEntrega());
         pedido.setObservacao(req.observacao());
@@ -82,7 +88,7 @@ public class PedidoPublicoService {
         // Pix só vai para a cozinha depois que o webhook confirmar; na entrega ou no caixa, vai direto.
         pedido.mudarStatus(pix ? StatusPedido.AGUARDANDO_PAGAMENTO : StatusPedido.RECEBIDO, null);
         pedido.setNumero(lojaRepository.reservarNumeroPedido(loja.getId()));   // por último: trava a linha da loja
-        pedidoRepository.save(pedido);
+        pedidoRepository.saveAndFlush(pedido);   // flush aqui: chave repetida estoura já, com rollback do número
 
         Pagamento pagamento = new Pagamento();
         pagamento.setPedido(pedido);
@@ -96,6 +102,15 @@ public class PedidoPublicoService {
 
         notificador.pedidoMudou(pedido);   // tela da cozinha recebe depois do commit
         return resposta(pedido, req.metodoPagamento());
+    }
+
+    /** Pedido já criado com esta chave na loja do contexto: o reenvio recebe a mesma resposta, sem criar outro. */
+    @Transactional(readOnly = true)
+    public Optional<PedidoCriadoResponse> jaCriado(UUID chave) {
+        return pedidoRepository.findByChaveIdempotencia(chave).map(p -> {
+            Pagamento pg = pagamentoRepository.findFirstByPedidoIdOrderByCriadoEmDesc(p.getId()).orElseThrow();
+            return resposta(p, pg.getMetodo());   // sem o QR do Pix: a tela do pedido busca em GET /pedidos/{id}
+        });
     }
 
     /** Acompanhamento pelo cliente (tela do Pix faz polling aqui). O id é um UUID: não dá para adivinhar. */

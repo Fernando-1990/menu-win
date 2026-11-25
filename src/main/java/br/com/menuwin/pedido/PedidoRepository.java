@@ -10,9 +10,13 @@ import org.springframework.data.jpa.repository.Query;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface PedidoRepository extends JpaRepository<Pedido, UUID> {
+
+    /** Pedido já criado com esta Idempotency-Key na loja do contexto (@TenantId). */
+    Optional<Pedido> findByChaveIdempotencia(UUID chave);
 
     /**
      * Tela da cozinha/balcão: pedidos em andamento + entregues que ainda não foram pagos em mãos.

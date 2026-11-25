@@ -182,13 +182,19 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   classes ainda não carregadas falham e a JVM memoriza a falha (pedido dava 500 para sempre). Parar a API antes.
 
 ## Status
-Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (58 testes, PostgreSQL real via Testcontainers).
+Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (73 testes, PostgreSQL real via Testcontainers).
 - Testcontainers fixado em 1.21.4 no `pom.xml`: o 1.21.0 do Boot 3.5.0 não conversa com Docker 29+.
 - Login de exemplo do dev está no comentário de `db/dev/R__seed_dev.sql`.
 - Erros de validação (400) ainda não listam os campos no ProblemDetail; o frontend vai precisar.
-- Pendências do pedido público (antes de ir para produção):
-  - Sem idempotência: retry de rede pode criar pedido duplicado (pensar em `Idempotency-Key`).
-  - Sem rate limit na rota pública de pedido.
+- Proteção do pedido público (`POST /api/public/lojas/{slug}/pedidos`):
+  - Idempotência: header `Idempotency-Key` (UUID, opcional; o front manda um por tentativa). Mesma chave na mesma
+    loja devolve o pedido já criado com 200 (unique parcial `(loja_id, chave_idempotencia)`, migration V6).
+    Dois envios simultâneos: o perdedor estoura a unique no `saveAndFlush` (rollback do número) e recebe o do outro.
+  - Limite (`LimitePedidos`, em memória, janela deslizante, por loja): IP 30, telefone 5, loja 60 por 10 min
+    (`menuwin.pedidos.limite`). Estourou: 429 com `Retry-After` e mensagem no `detail`. Só conta pedido criado;
+    reenvio com a mesma chave e pedido recusado (400) não contam. O teto da loja é a barreira que não se contorna:
+    IP vem de `CF-Connecting-IP`/`True-Client-IP`/`X-Forwarded-For`, que dá para forjar no Render.
+  - Pendente: conferir em produção qual header traz o IP real (logar uma vez) e, se der, confiar só nele.
 - Pendências do Pix:
   - NÃO testado contra o sandbox real do MP. Pela doc do MP, aprovação de Pix em teste (nome "APRO") só
     existe na API de Orders (`/v1/orders`); a integração usa `/v1/payments`, onde Pix de teste fica pendente.

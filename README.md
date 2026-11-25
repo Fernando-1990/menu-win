@@ -31,6 +31,12 @@ Comer aqui e pagar ao sair: `"tipoEntrega": "CONSUMO_LOCAL"` + `"metodoPagamento
 Pix: `"metodoPagamento": "PIX"` (exige `cliente.email`). A resposta traz `pix.copiaECola` e `pix.qrCodeBase64`;
 acompanhe em `GET /api/public/lojas/{slug}/pedidos/{id}` até `status` virar `RECEBIDO`.
 
+Proteções:
+- Header `Idempotency-Key: <uuid>` (opcional, recomendado): reenviar com a mesma chave devolve o pedido já
+  criado (200) em vez de criar outro (201). Gere uma chave nova a cada pedido novo.
+- Limite por loja: 5 pedidos por telefone, 30 por IP e 60 na loja a cada 10 min (`menuwin.pedidos.limite`).
+  Acima disso: `429 Too Many Requests` com `Retry-After` (segundos) e a mensagem em `detail`.
+
 ## Pix simulado (homologar sem conta no Mercado Pago)
 No profile dev o Pix vem **simulado** (log: `PIX SIMULADO ATIVO`). Nada é cobrado de verdade:
 1. No painel (DONO), em Configurações, conecte o Pix com qualquer texto (ex.: `teste`).

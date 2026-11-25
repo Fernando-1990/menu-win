@@ -276,7 +276,95 @@ class PedidoPublicoTest {
                 .andExpect(jsonPath("$.categorias[0].produtos[1].disponivel").value(false));
     }
 
+    @Test
+    void reenvioComAMesmaChaveDevolveOMesmoPedido() throws Exception {
+        String corpo = pedido("RETIRADA", null, "CARTAO_NA_ENTREGA", null, item(xBurguer, 1, adicional(frances, 1)));
+        UUID chave = UUID.randomUUID();
+
+        String primeiro = pedirComChave(corpo, chave.toString())
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        pedirComChave(corpo, chave.toString())
+                .andExpect(status().isOk())   // 200: não criou outro
+                .andExpect(jsonPath("$.id").value((String) JsonPath.read(primeiro, "$.id")))
+                .andExpect(jsonPath("$.numero").value(1))
+                .andExpect(jsonPath("$.total").value(18.00))
+                .andExpect(jsonPath("$.itens", hasSize(1)));
+
+        // chave nova = pedido novo
+        pedirComChave(corpo, UUID.randomUUID().toString())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.numero").value(2));
+        assertThat(jdbc.queryForObject("select count(*) from pedidos where loja_id = ?", Integer.class, loja.getId()))
+                .isEqualTo(2);
+    }
+
+    @Test
+    void mesmaChaveEmOutraLojaNaoColide() throws Exception {
+        UUID chave = UUID.randomUUID();
+        pedirComChave(pedido("RETIRADA", null, "CARTAO_NA_ENTREGA", null, item(xBurguer, 1, adicional(frances, 1))),
+                chave.toString()).andExpect(status().isCreated());
+
+        Loja outra = new Loja();
+        outra.setSlug("outra-" + UUID.randomUUID().toString().substring(0, 8));
+        outra.setNome("Outra");
+        outra = lojaRepository.save(outra);
+        TenantContext.set(outra.getId());
+        Categoria c = new Categoria();
+        c.setNome("Bebidas");
+        categoriaRepository.save(c);
+        UUID agua = produto(c, "Água", "4.00", null, true);
+        TenantContext.clear();
+
+        mvc.perform(post("/api/public/lojas/" + outra.getSlug() + "/pedidos")
+                        .header("Idempotency-Key", chave.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(pedido("RETIRADA", null, "CARTAO_NA_ENTREGA", null, item(agua, 1))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.total").value(4.00));
+    }
+
+    @Test
+    void envioSimultaneoComAMesmaChaveCriaUmPedidoSo() throws Exception {
+        String corpo = pedido("RETIRADA", null, "CARTAO_NA_ENTREGA", null, item(xBurguer, 1, adicional(frances, 1)));
+        String chave = UUID.randomUUID().toString();
+        ExecutorService pool = Executors.newFixedThreadPool(6);
+        List<Integer> status = new ArrayList<>();
+        List<String> ids = new ArrayList<>();
+        try {
+            List<Callable<String[]>> tarefas = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                tarefas.add(() -> {
+                    var r = pedirComChave(corpo, chave).andReturn().getResponse();
+                    return new String[] {String.valueOf(r.getStatus()), JsonPath.read(r.getContentAsString(), "$.id")};
+                });
+            }
+            for (Future<String[]> f : pool.invokeAll(tarefas)) {
+                status.add(Integer.valueOf(f.get()[0]));
+                ids.add(f.get()[1]);
+            }
+        } finally {
+            pool.shutdown();
+        }
+        assertThat(status).containsOnly(200, 201).containsOnlyOnce(201);
+        assertThat(ids).containsOnly(ids.getFirst());
+        assertThat(jdbc.queryForList("select numero from pedidos where loja_id = ?", Integer.class, loja.getId()))
+                .containsExactly(1);   // o número reservado pelos que perderam voltou no rollback
+    }
+
+    @Test
+    void chaveQueNaoEUuidERecusada() throws Exception {
+        pedirComChave(pedido("RETIRADA", null, "CARTAO_NA_ENTREGA", null, item(xBurguer, 1, adicional(frances, 1))), "abc")
+                .andExpect(status().isBadRequest());
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    private ResultActions pedirComChave(String json, String chave) throws Exception {
+        return mvc.perform(post("/api/public/lojas/" + loja.getSlug() + "/pedidos")
+                .header("Idempotency-Key", chave)
+                .contentType(MediaType.APPLICATION_JSON).content(json));
+    }
 
     private static final String ENDERECO = """
             {"logradouro":"Rua das Flores","numero":"100","bairro":"Centro","cidade":"São Paulo","uf":"sp","cep":"01001-000"}""";
