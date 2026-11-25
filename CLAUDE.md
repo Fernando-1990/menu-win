@@ -182,7 +182,10 @@ mas com marca, textos e visual próprios). Primeiro cliente-alvo: uma padaria qu
   classes ainda não carregadas falham e a JVM memoriza a falha (pedido dava 500 para sempre). Parar a API antes.
 
 ## Status
-Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (73 testes, PostgreSQL real via Testcontainers).
+Passos 1 a 8 entregues (+ consumo no local / pagar no caixa), `mvn test` passando (76 testes, PostgreSQL real via Testcontainers).
+- Troca de senha: `PUT /api/painel/conta/senha` (qualquer papel, exige a senha atual; 5 erros em 15 min = 429,
+  em memória em `TentativasSenha`). Pendente: revogar tokens antigos ao trocar (hoje valem até expirar, 8h);
+  "esqueci minha senha" (precisa de envio de e-mail; até lá, reset via SQL como em `docs/primeira-loja.sql`).
 - Testcontainers fixado em 1.21.4 no `pom.xml`: o 1.21.0 do Boot 3.5.0 não conversa com Docker 29+.
 - Login de exemplo do dev está no comentário de `db/dev/R__seed_dev.sql`.
 - Erros de validação (400) ainda não listam os campos no ProblemDetail; o frontend vai precisar.

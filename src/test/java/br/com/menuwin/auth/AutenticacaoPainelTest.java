@@ -25,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,6 +109,61 @@ class AutenticacaoPainelTest {
         mvc.perform(get("/api/public/lojas/" + loja.getSlug() + "/cardapio")).andExpect(status().isOk());
         mvc.perform(get("/api/public/lojas/nao-existe/cardapio")).andExpect(status().isNotFound());
         mvc.perform(get("/api/qualquer-outra-coisa")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void trocaDeSenhaValeNoProximoLoginEASenhaVelhaParaDeFuncionar() throws Exception {
+        String email = criarUsuario(criarLoja(true), true);
+        String token = login(email);
+
+        trocarSenha(token, SENHA, "nova-senha-123").andExpect(status().isNoContent());
+
+        tentarLogin(email, SENHA, 401);
+        tentarLogin(email, "nova-senha-123", 200);
+        mvc.perform(get("/api/painel/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());   // a sessão atual continua (sem revogação de token por enquanto)
+    }
+
+    @Test
+    void trocaDeSenhaExigeASenhaAtualEUmaNovaValida() throws Exception {
+        String email = criarUsuario(criarLoja(true), true);
+        String token = login(email);
+
+        trocarSenha(token, "chute-errado", "nova-senha-123")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Senha atual incorreta"));
+        trocarSenha(token, SENHA, "curta").andExpect(status().isBadRequest());
+        trocarSenha(token, SENHA, SENHA)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("A nova senha precisa ser diferente da atual"));
+        trocarSenha(token, SENHA, "ç".repeat(40))   // 40 caracteres, 80 bytes: passa do limite do BCrypt
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("longa demais")));
+        tentarLogin(email, SENHA, 200);   // nada mudou
+
+        mvc.perform(put("/api/painel/conta/senha").contentType(MediaType.APPLICATION_JSON)
+                        .content(senhas(SENHA, "nova-senha-123")))
+                .andExpect(status().isUnauthorized());   // sem token
+    }
+
+    @Test
+    void errarASenhaAtualMuitasVezesBloqueiaATroca() throws Exception {
+        String token = login(criarUsuario(criarLoja(true), true));
+        for (int i = 0; i < 5; i++) {
+            trocarSenha(token, "chute-" + i, "nova-senha-123").andExpect(status().isBadRequest());
+        }
+        trocarSenha(token, SENHA, "nova-senha-123")   // até a certa fica bloqueada por um tempo
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("15 minutos")));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions trocarSenha(String token, String atual, String nova) throws Exception {
+        return mvc.perform(put("/api/painel/conta/senha").header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(senhas(atual, nova)));
+    }
+
+    private static String senhas(String atual, String nova) {
+        return "{\"senhaAtual\":\"" + atual + "\",\"novaSenha\":\"" + nova + "\"}";
     }
 
     private String login(String email) throws Exception {

@@ -2,11 +2,14 @@ package br.com.menuwin.auth;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -25,5 +28,12 @@ public class AuthController {
     @GetMapping("/api/painel/me")
     public SessaoResponse me(@AuthenticationPrincipal Jwt jwt) {
         return service.sessaoAtual(UUID.fromString(jwt.getSubject()));
+    }
+
+    /** Qualquer papel troca a própria senha. 204 sem corpo; a sessão atual continua valendo. */
+    @PutMapping("/api/painel/conta/senha")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void trocarSenha(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody TrocarSenhaRequest req) {
+        service.trocarSenha(UUID.fromString(jwt.getSubject()), req);
     }
 }

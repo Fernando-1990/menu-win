@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ public class AuthService {
 
     /** Hash usado quando o e-mail não existe: o tempo de resposta não revela quais e-mails estão cadastrados. */
     private final String hashFalso;
+
+    private final TentativasSenha tentativas = new TentativasSenha();
 
     public AuthService(UsuarioRepository usuarioRepository, LojaRepository lojaRepository,
                        PasswordEncoder passwordEncoder, TokenService tokenService) {
@@ -46,6 +49,35 @@ public class AuthService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha inválidos"));
 
         return tokenService.emitir(usuario);
+    }
+
+    /**
+     * Troca a própria senha. Exige a senha atual: quem pegou o painel aberto (ou o token) não fica com a conta.
+     * Errar a atual 5 vezes em 15 min bloqueia novas tentativas por um tempo (429).
+     * Tokens já emitidos continuam valendo até expirar (8h): não há revogação ainda.
+     */
+    @Transactional
+    public void trocarSenha(UUID usuarioId, TrocarSenhaRequest req) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .filter(u -> u.getLojaId().equals(TenantContext.getObrigatorio()) && u.isAtivo())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        tentativas.verificar(usuarioId);
+        if (!passwordEncoder.matches(req.senhaAtual(), usuario.getSenhaHash())) {
+            tentativas.registrarErro(usuarioId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual incorreta");
+        }
+        if (req.novaSenha().getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A nova senha é longa demais. Use até 72 caracteres sem acento.");
+        }
+        if (req.novaSenha().isBlank() || req.novaSenha().strip().length() < 8) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A nova senha precisa ter pelo menos 8 caracteres");
+        }
+        if (passwordEncoder.matches(req.novaSenha(), usuario.getSenhaHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A nova senha precisa ser diferente da atual");
+        }
+        usuario.setSenhaHash(passwordEncoder.encode(req.novaSenha()));
+        tentativas.limpar(usuarioId);
     }
 
     /** A loja vem do TenantContext, preenchido pelo PainelTenantFilter a partir do token. */

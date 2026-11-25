@@ -69,6 +69,10 @@ curl http://localhost:8080/api/painel/me -H "Authorization: Bearer <token>"
 ```
 Fora do profile dev, defina `JWT_SECRET` (mínimo 32 bytes).
 
+Trocar a própria senha (qualquer papel): `PUT /api/painel/conta/senha` com
+`{"senhaAtual": "...", "novaSenha": "..."}` → `204`. Nova senha de 8 a 72 caracteres e diferente da atual;
+senha atual errada → `400`; 5 erros em 15 min → `429`. Tokens já emitidos continuam valendo até expirar.
+
 ### Cozinha e balcão (`/api/painel/pedidos`, todos os papéis)
 | Rota | O que faz |
 |---|---|
